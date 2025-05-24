@@ -3,6 +3,7 @@ package com.openclassrooms.starterjwt.services;
 import com.openclassrooms.starterjwt.models.User;
 import com.openclassrooms.starterjwt.repository.UserRepository;
 import com.openclassrooms.starterjwt.services.UserService;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -22,23 +23,43 @@ class UserServiceIntegrationTest {
     @Autowired
     private UserRepository userRepository;
 
-    @Test
-    void findById_returnsUser_ifIdExists() {
-        // Arrange
-        User user = new User()
-                .setEmail("integration@test.com")
-                .setFirstName("Test")
+    private User testUser;
+
+    @BeforeEach
+    void setUp() {
+        // Clean up
+        userRepository.deleteAll();
+
+        // Create and save a user to use in each test
+        testUser = new User()
+                .setEmail("commonuser@test.com")
+                .setFirstName("Common")
                 .setLastName("User")
                 .setPassword("securePassword")
                 .setAdmin(false);
-        user.setCreatedAt(LocalDateTime.now()); // manually set for test
-        User savedUser = userRepository.save(user);
+        testUser.setCreatedAt(LocalDateTime.now());
 
+        testUser = userRepository.save(testUser);
+    }
+
+    @Test
+    void findById_returnsUser_ifIdExists() {
         // Act
-        User found = userService.findById(savedUser.getId());
+        User found = userService.findById(testUser.getId());
 
         // Assert
         assertThat(found).isNotNull();
-        assertThat(found.getEmail()).isEqualTo("integration@test.com");
+        assertThat(found.getEmail()).isEqualTo("commonuser@test.com");
     }
+
+    @Test
+    void delete_removesUser_ifIdExists() {
+        // Act
+        userService.delete(testUser.getId());
+
+        // Assert
+        User deleted = userService.findById(testUser.getId());
+        assertThat(deleted).isNull();
+    }
+
 }
