@@ -2,6 +2,7 @@ package com.openclassrooms.starterjwt.controllers;
 
 import com.openclassrooms.starterjwt.models.Teacher;
 import com.openclassrooms.starterjwt.models.User;
+import com.openclassrooms.starterjwt.repository.SessionRepository;
 import com.openclassrooms.starterjwt.repository.TeacherRepository;
 import com.openclassrooms.starterjwt.repository.UserRepository;
 import com.openclassrooms.starterjwt.security.jwt.JwtUtils;
@@ -38,6 +39,10 @@ public class TeacherControllerIntegrationTest {
     private UserRepository userRepository;
 
     @Autowired
+    private SessionRepository sessionRepository;
+
+
+    @Autowired
     private JwtUtils jwtUtils;
 
     private String jwtToken;
@@ -45,6 +50,7 @@ public class TeacherControllerIntegrationTest {
 
     @BeforeEach
     void setUp() {
+        sessionRepository.deleteAll();  // DELETE sessions first to clear FK dependencies
         teacherRepository.deleteAll();
         userRepository.deleteAll();
 
