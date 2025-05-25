@@ -23,7 +23,7 @@ import { FormComponent } from './form.component';
 @Component({ template: '' })
 class DummyComponent {}
 
-describe('FormComponent', () => {
+describe('FormComponent Unit Tests', () => {
   let component: FormComponent;
   let fixture: ComponentFixture<FormComponent>;
   let router: Router;
@@ -107,13 +107,15 @@ describe('FormComponent', () => {
   });
 
   it('should redirect non-admin users on init', () => {
-    // Set admin to false and trigger ngOnInit
+    const originalAdmin = mockSessionService.sessionInformation.admin;
     mockSessionService.sessionInformation.admin = false;
 
     component.ngOnInit();
 
     expect(router.navigate).toHaveBeenCalledWith(['/sessions']);
+    mockSessionService.sessionInformation.admin = originalAdmin; // restore
   });
+
 
    it('should initialize form with session data in update mode', () => {
      // Force update mode by mocking the URL and route param
