@@ -88,6 +88,48 @@ class AuthControllerTest {
     }
 
     @Test
+    void authenticateUser_ShouldReturnJwtResponse_WhenUserNotFoundInRepository() {
+        // Arrange
+        String email = "user@example.com";
+        String password = "password";
+        String jwt = "mocked-jwt";
+
+        LoginRequest loginRequest = new LoginRequest();
+        loginRequest.setEmail(email);
+        loginRequest.setPassword(password);
+
+        UserDetailsImpl userDetails = UserDetailsImpl.builder()
+                .id(1L)
+                .username(email)
+                .firstName("John")
+                .lastName("Doe")
+                .password(password)
+                .admin(false)
+                .build();
+
+        Authentication authentication = mock(Authentication.class);
+        when(authentication.getPrincipal()).thenReturn(userDetails);
+        when(authenticationManager.authenticate(any(UsernamePasswordAuthenticationToken.class)))
+                .thenReturn(authentication);
+        when(jwtUtils.generateJwtToken(authentication)).thenReturn(jwt);
+
+        // Simulate user not found in repository
+        when(userRepository.findByEmail(email)).thenReturn(Optional.empty());
+
+        // Act
+        ResponseEntity<?> response = authController.authenticateUser(loginRequest);
+
+        // Assert
+        assertThat(response.getBody()).isInstanceOf(JwtResponse.class);
+        JwtResponse jwtResponse = (JwtResponse) response.getBody();
+        assertThat(jwtResponse.getToken()).isEqualTo(jwt);
+        assertThat(jwtResponse.getUsername()).isEqualTo(email);
+        assertThat(jwtResponse.getFirstName()).isEqualTo("John");
+        assertThat(jwtResponse.getLastName()).isEqualTo("Doe");
+        assertThat(jwtResponse.getAdmin()).isFalse(); // Should default to false
+    }
+
+    @Test
     void registerUser_ShouldReturnSuccessMessage_WhenValidRequest() {
         // Arrange
         String email = "user@example.com";

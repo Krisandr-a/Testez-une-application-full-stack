@@ -82,33 +82,6 @@ class UserControllerTest {
         assertThat(response.getStatusCodeValue()).isEqualTo(400);
     }
 
-    @Test
-    void deleteUser_ShouldReturnOk_WhenUserIsDeletedSuccessfully() {
-        // Arrange
-        Long userId = 1L;
-
-        // Create a mock user that will be returned by the userService
-        User user = User.builder()
-                .id(userId)  // Set the id
-                .email("user@example.com")
-                .lastName("Doe")
-                .firstName("John")
-                .password("password")
-                .admin(true)
-                .build();
-
-        // Mock the service to return the created user
-        when(userService.findById(userId)).thenReturn(user);
-
-        // Act
-        ResponseEntity<?> response = userController.save(String.valueOf(userId));
-
-        // Assert
-        assertThat(response.getStatusCodeValue()).isEqualTo(200);  // 200 OK status
-        verify(userService, times(1)).delete(userId);  // Ensure the delete method was called
-    }
-
-
     // UserController has a strangely named method for DeleteMapping: save
     @Test
     void save_ShouldReturnOk_WhenUserIsDeletedSuccessfully() {
@@ -139,6 +112,59 @@ class UserControllerTest {
         // Assert
         assertThat(response.getStatusCodeValue()).isEqualTo(200);  // 200 OK status
         verify(userService, times(1)).delete(userId);  // Ensure the delete method was called
+    }
+
+    @Test
+    void save_ShouldReturnUnauthorized_WhenUserIsNotOwner() {
+        // Arrange
+        Long userId = 1L;
+
+        User user = User.builder()
+                .id(userId)
+                .email("user@example.com") // actual user email
+                .lastName("Doe")
+                .firstName("John")
+                .password("password")
+                .admin(true)
+                .build();
+
+        when(userService.findById(userId)).thenReturn(user);
+
+        UserDetails userDetails = mock(UserDetails.class);
+        when(userDetails.getUsername()).thenReturn("otheruser@example.com"); // does not match
+
+        Authentication authentication = mock(Authentication.class);
+        when(authentication.getPrincipal()).thenReturn(userDetails);
+        SecurityContextHolder.getContext().setAuthentication(authentication);
+
+        // Act
+        ResponseEntity<?> response = userController.save(String.valueOf(userId));
+
+        // Assert
+        assertThat(response.getStatusCodeValue()).isEqualTo(401); // Unauthorized
+        verify(userService, never()).delete(anyLong()); // Should not delete
+    }
+
+    @Test
+    void save_ShouldReturnBadRequest_WhenIdIsInvalid() {
+        // Act
+        ResponseEntity<?> response = userController.save("invalid-id");
+
+        // Assert
+        assertThat(response.getStatusCodeValue()).isEqualTo(400); // Bad Request
+    }
+
+    @Test
+    void save_ShouldReturnNotFound_WhenUserDoesNotExist() {
+        // Arrange
+        Long userId = 1L;
+        when(userService.findById(userId)).thenReturn(null);
+
+        // Act
+        ResponseEntity<?> response = userController.save(String.valueOf(userId));
+
+        // Assert
+        assertThat(response.getStatusCodeValue()).isEqualTo(404); // Not Found
     }
 
 }
