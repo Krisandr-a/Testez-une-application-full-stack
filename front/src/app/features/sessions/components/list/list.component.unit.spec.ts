@@ -7,7 +7,7 @@ import { SessionService } from 'src/app/services/session.service';
 
 import { ListComponent } from './list.component';
 
-describe('ListComponent', () => {
+describe('ListComponent Unit Tests', () => {
   let component: ListComponent;
   let fixture: ComponentFixture<ListComponent>;
 
