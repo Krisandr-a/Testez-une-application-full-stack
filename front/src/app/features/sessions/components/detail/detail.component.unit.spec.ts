@@ -19,7 +19,7 @@ import { TeacherService } from 'src/app/services/teacher.service';
 import { DetailComponent } from './detail.component';
 
 
-describe('DetailComponent', () => {
+describe('DetailComponent Unit Tests', () => {
   let component: DetailComponent;
   let fixture: ComponentFixture<DetailComponent>;
   let service: SessionService;

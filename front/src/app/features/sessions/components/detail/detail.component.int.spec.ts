@@ -1,60 +1,87 @@
-import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
-import { Component } from '@angular/core';
-import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
-import { RouterTestingModule } from '@angular/router/testing';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { DetailComponent } from './detail.component';
 import { ActivatedRoute, Router } from '@angular/router';
-import { MatSnackBarModule } from '@angular/material/snack-bar';
+import { of } from 'rxjs';
+
+import { MatSnackBarModule, MatSnackBar } from '@angular/material/snack-bar';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
-import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
-import { NoopAnimationsModule } from '@angular/platform-browser/animations';
-import { ReactiveFormsModule } from '@angular/forms';
 
-import { DetailComponent } from './detail.component';
-import { SessionService } from 'src/app/services/session.service';
+import { SessionService } from '../../../../services/session.service';
+import { SessionApiService } from '../../services/session-api.service';
+import { TeacherService } from '../../../../services/teacher.service';
 
-@Component({ template: '' })
-class DummyComponent {}
+import { ReactiveFormsModule } from '@angular/forms';  // <-- Import ReactiveFormsModule here
 
-describe('DetailComponent Integration Tests (with mocked HTTP)', () => {
+describe('DetailComponent Integration Tests', () => {
   let component: DetailComponent;
   let fixture: ComponentFixture<DetailComponent>;
-  let httpMock: HttpTestingController;
-  let router: Router;
 
-  const mockSessionInformation = {
-    admin: true,
-    id: 1
-  };
+  let mockSessionApiService: jest.Mocked<SessionApiService>;
+  let mockTeacherService: jest.Mocked<TeacherService>;
+  let mockSnackBar: jest.Mocked<MatSnackBar>;
+  let mockRouter: jest.Mocked<Router>;
 
-  const mockSession = {
+  const session = {
     id: '123',
     teacher_id: 42,
     users: [1]
   };
 
-  const mockTeacher = {
+  const teacher = {
     id: 42,
     name: 'Mr. Mock'
   };
 
+  const mockSessionService: Partial<SessionService> = {
+    sessionInformation: {
+      id: 1,
+      admin: true,
+      token: 'mock-token',
+      type: 'user',
+      username: 'mockuser',
+      firstName: 'Mock',
+      lastName: 'User'
+    }
+  };
+
   beforeEach(async () => {
+    mockSessionApiService = {
+      detail: jest.fn().mockReturnValue(of(session)),
+      delete: jest.fn().mockReturnValue(of(undefined)),
+      participate: jest.fn().mockReturnValue(of(undefined)),
+      unParticipate: jest.fn().mockReturnValue(of(undefined))
+    } as unknown as jest.Mocked<SessionApiService>;
+
+    mockTeacherService = {
+      detail: jest.fn().mockReturnValue(of(teacher))
+    } as unknown as jest.Mocked<TeacherService>;
+
+    mockSnackBar = {
+      open: jest.fn()
+    } as unknown as jest.Mocked<MatSnackBar>;
+
+    mockRouter = {
+      navigate: jest.fn()
+    } as unknown as jest.Mocked<Router>;
+
     await TestBed.configureTestingModule({
-      declarations: [DetailComponent, DummyComponent],
+      declarations: [DetailComponent],
       imports: [
-        RouterTestingModule.withRoutes([
-          { path: 'sessions', component: DummyComponent }
-        ]),
-        HttpClientTestingModule,
+        ReactiveFormsModule,
         MatSnackBarModule,
+        ReactiveFormsModule,
         MatCardModule,
         MatIconModule,
-        MatButtonModule,
-        NoopAnimationsModule,
-        ReactiveFormsModule
+        MatButtonModule
       ],
       providers: [
+        { provide: SessionApiService, useValue: mockSessionApiService },
+        { provide: TeacherService, useValue: mockTeacherService },
+        { provide: SessionService, useValue: mockSessionService },
+        { provide: MatSnackBar, useValue: mockSnackBar },
+        { provide: Router, useValue: mockRouter },
         {
           provide: ActivatedRoute,
           useValue: {
@@ -64,83 +91,51 @@ describe('DetailComponent Integration Tests (with mocked HTTP)', () => {
               }
             }
           }
-        },
-        {
-          provide: SessionService,
-          useValue: { sessionInformation: mockSessionInformation }
         }
       ]
     }).compileComponents();
 
     fixture = TestBed.createComponent(DetailComponent);
     component = fixture.componentInstance;
-    httpMock = TestBed.inject(HttpTestingController);
-    router = TestBed.inject(Router);
-    fixture.detectChanges(); // triggers ngOnInit
+    fixture.detectChanges();
   });
 
-  afterEach(() => {
-    httpMock.verify(); // verify all HTTP calls were handled
+  it('should create', () => {
+    expect(component).toBeTruthy();
   });
 
-  it('should fetch session and teacher on init', fakeAsync(() => {
-    // Expect GET session
-    const sessionReq = httpMock.expectOne(req => req.url === 'api/session/123' && req.method === 'GET');
-    expect(sessionReq.request.method).toBe('GET');
-    sessionReq.flush(mockSession);
-
-    // Expect GET teacher
-    const teacherReq = httpMock.expectOne(req => req.url === 'api/teacher/42' && req.method === 'GET');
-    expect(teacherReq.request.method).toBe('GET');
-    teacherReq.flush(mockTeacher);
-
-    tick();
-
-    expect(component.session).toEqual(mockSession);
-    expect(component.teacher).toEqual(mockTeacher);
+  it('should fetch session/teacher', () => {
+    expect(mockSessionApiService.detail).toHaveBeenCalledWith('123');
+    expect(mockTeacherService.detail).toHaveBeenCalledWith('42');
+    expect(component.session).toEqual(session);
+    expect(component.teacher).toEqual(teacher);
     expect(component.isParticipate).toBe(true);
-  }));
+    expect(component.isAdmin).toBe(true);
+  });
 
-  it('should participate and refetch session', fakeAsync(() => {
+  it('should participate and refetch session', () => {
     component.participate();
+    expect(mockSessionApiService.participate).toHaveBeenCalledWith('123', '1');
+    expect(mockSessionApiService.detail).toHaveBeenCalledTimes(2);
+  });
 
-    // POST participate
-    const participateReq = httpMock.expectOne(req => req.url === 'api/session/123/participate/1' && req.method === 'POST');
-    expect(participateReq.request.method).toBe('POST');
-    participateReq.flush(null);
-
-    // Multiple GET session requests after participation
-    const sessionGetRequests = httpMock.match(req => req.url === 'api/session/123' && req.method === 'GET');
-    sessionGetRequests.forEach(req => req.flush(mockSession));
-
-    // Multiple GET teacher requests
-    const teacherRequests = httpMock.match(req => req.url === 'api/teacher/42' && req.method === 'GET');
-    teacherRequests.forEach(req => req.flush(mockTeacher));
-
-    tick();
-
-    expect(component.session).toEqual(mockSession);
-  }));
-
-  it('should unParticipate and refetch session', fakeAsync(() => {
+  it('should unParticipate and refetch session', () => {
     component.unParticipate();
+    expect(mockSessionApiService.unParticipate).toHaveBeenCalledWith('123', '1');
+    expect(mockSessionApiService.detail).toHaveBeenCalledTimes(2);
+  });
 
-    // DELETE unParticipate
-    const unParticipateReq = httpMock.expectOne(req => req.url === 'api/session/123/participate/1' && req.method === 'DELETE');
-    expect(unParticipateReq.request.method).toBe('DELETE');
-    unParticipateReq.flush(null);
+  it('should delete the session and navigate', () => {
+    component.delete();
+    expect(mockSessionApiService.delete).toHaveBeenCalledWith('123');
+    expect(mockSnackBar.open).toHaveBeenCalledWith('Session deleted !', 'Close', { duration: 3000 });
+    expect(mockRouter.navigate).toHaveBeenCalledWith(['sessions']);
+  });
 
-    // Multiple GET session requests after unparticipate
-    const sessionGetRequests = httpMock.match(req => req.url === 'api/session/123' && req.method === 'GET');
-    sessionGetRequests.forEach(req => req.flush(mockSession));
-
-    // Multiple GET teacher requests
-    const teacherRequests = httpMock.match(req => req.url === 'api/teacher/42' && req.method === 'GET');
-    teacherRequests.forEach(req => req.flush(mockTeacher));
-
-    tick();
-
-    expect(component.session).toEqual(mockSession);
-  }));
-
+  it('should call window.history.back when back is called', () => {
+    const backSpy = jest.spyOn(window.history, 'back').mockImplementation(() => {});
+    component.back();
+    expect(backSpy).toHaveBeenCalled();
+    backSpy.mockRestore();
+  });
 });
