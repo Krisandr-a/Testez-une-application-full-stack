@@ -101,16 +101,4 @@ describe('RegisterComponent', () => {
     expect(component.onError).toBe(true);
   }));
 
-
-//   it('should mark form invalid with empty fields', () => {
-//     component.form.setValue({
-//       email: '',
-//       firstName: '',
-//       lastName: '',
-//       password: ''
-//     });
-//
-//     expect(component.form.valid).toBe(false);
-//   });
-
 });
