@@ -1,6 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ReactiveFormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
+import { of } from 'rxjs';
 
 import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -56,4 +57,22 @@ describe('LoginComponent Unit Tests', () => {
 
     expect(component.form.valid).toBe(true);
   });
+
+  it('should call authService.login with form values on submit', () => {
+    const mockLogin = jest.fn().mockReturnValue(of({}));
+    (component as any).authService.login = mockLogin;
+
+    component.form.setValue({
+      email: 'user@example.com',
+      password: 'securePass'
+    });
+
+    component.submit();
+
+    expect(mockLogin).toHaveBeenCalledWith({
+      email: 'user@example.com',
+      password: 'securePass'
+    });
+  });
+
 });
