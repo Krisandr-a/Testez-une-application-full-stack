@@ -1,4 +1,4 @@
-describe('Create yoga class as admin spec', () => {
+describe('End-to-end admin spec', () => {
   beforeEach(() => {
     cy.intercept('GET', '/api/teacher', {
       statusCode: 200,
@@ -20,7 +20,7 @@ describe('Create yoga class as admin spec', () => {
       },
     });
 
-    // Intercept the POST request for saving session to mock response
+    // Create session: intercept the POST request for saving session to mock response
     cy.intercept('POST', '/api/session', {
       statusCode: 201,
       body: {
@@ -32,6 +32,56 @@ describe('Create yoga class as admin spec', () => {
       }
     }).as('postSession');
 
+    // Edit session: intercept the POST request for saving session to mock response
+    cy.intercept('PUT', '/api/session/123', {
+      statusCode: 201,
+      body: {
+        id: 123,
+        name: 'My Test Session',
+        date: '2025-04-25',
+        teacher_id: 1,
+        description: 'The session has been edited.'
+      }
+    }).as('putSession');
+
+//     // Intercept for create session
+//     cy.intercept('POST', '/api/session', (req) => {
+//       if (req.body.description === 'This is a test description for my session.') {
+//         req.reply({
+//           statusCode: 201,
+//           body: {
+//             id: 123,
+//             name: 'My Test Session',
+//             date: '2025-04-25',
+//             teacher_id: 1,
+//             description: 'This is a test description for my session.'
+//           }
+//         });
+//       }
+//     }).as('postSession');
+
+//     // Intercept for edited session
+//     cy.intercept('POST', '/api/session', (req) => {
+//       if (req.body.description === 'The session has been edited.') {
+//         req.reply({
+//           statusCode: 201,
+//           body: {
+//             id: 123,
+//             name: 'My Test Session',
+//             date: '2025-04-25',
+//             teacher_id: 1,
+//             description: 'The session has been edited.'
+//           }
+//         });
+//       }
+//     }).as('postEditedSession');
+
+
+
+
+
+
+
     cy.intercept(
       {
         method: 'GET',
@@ -39,19 +89,6 @@ describe('Create yoga class as admin spec', () => {
       },
       []
     ).as('session');
-
-//     // Mock the session list with a test session
-//     cy.intercept('GET', '/api/session', {
-//       statusCode: 200,
-//       body: [
-//         {
-//           id: 123,
-//           name: 'Mock Yoga Session',
-//           date: '2025-04-30T00:00:00.000Z',
-//           description: 'A relaxing mock session for testing.',
-//         },
-//       ],
-//     }).as('getSessions');
 
     const sessionMock = {
       id: 123,
@@ -166,6 +203,124 @@ describe('Create yoga class as admin spec', () => {
     cy.contains('This is a test description for my session.').should('be.visible');
   });
 
+  it('should delete the yoga session from the detail page and remove it from the session list', () => {
+    // Intercept the DELETE call
+    cy.intercept('DELETE', '/api/session/123', {
+      statusCode: 204
+    }).as('deleteSession');
+
+    // Mock the session list after deletion as empty
+    cy.intercept('GET', '/api/session', {
+      statusCode: 200,
+      body: []
+    }).as('getSessionsAfterDelete');
+
+    // Click Detail to go to the session detail page
+    cy.contains('mat-card', 'My Test Session')
+      .contains('button', 'Detail')
+      .click();
+
+    cy.url().should('include', '/sessions/detail/123');
+    cy.wait('@getSessionDetail');
+    cy.wait('@getTeacherDetail');
+
+    // Click Delete button
+    cy.contains('button', 'Delete').click();
+
+    // Confirm redirection to the list page
+    cy.url().should('eq', 'http://localhost:4200/sessions');
+    cy.wait('@getSessionsAfterDelete');
+
+    // Ensure the deleted session is not visible
+    cy.contains('My Test Session').should('not.exist');
+    cy.contains('Session deleted !').should('be.visible');
+
+  });
+
+  it('should navigate to the update page after clicking Edit button on session card and edit the session after modifying a form field and clicking save', () => {
+    // Wait for session list
+    cy.wait('@getSessions');
+
+    // Click the "Edit" button inside the mat-card
+    cy.contains('mat-card', 'My Test Session')
+      .contains('button', 'Edit')
+      .click();
+
+    // Assert that we're on the update page
+    cy.url().should('eq', 'http://localhost:4200/sessions/update/123');
+
+    // Wait for detail data to be loaded
+    cy.wait('@getSessionDetail');
+
+    // Assert that the form fields are populated with the session data
+    cy.get('h1').should('contain', 'Update session');
+    cy.get('input[formControlName="name"]').should('have.value', 'My Test Session');
+    cy.get('input[formControlName="date"]').should('have.value', '2025-04-25');
+    cy.get('textarea[formControlName="description"]').should('have.value', 'This is a test description for my session.');
+    cy.get('mat-select[formControlName="teacher_id"]')
+      .invoke('text')
+      .should('contain', 'John Doe'); // Adjust if the select shows full name in a different format
+
+    cy.get('textarea[formControlName="description"]')
+      .clear()
+      .type('The session has been edited.');
+
+      // Click Save button
+      cy.contains('button', 'Save').click();
+
+      // Wait for the save POST request to complete
+      cy.wait('@putSession');
+
+      // Assert URL navigated back to sessions list
+      cy.url().should('eq', 'http://localhost:4200/sessions');
+
+      // Check that the pop-up with the message "Session created !" appears
+      cy.contains('Session updated !').should('be.visible');
+
+
+  });
+
+  it('should navigate to account page when clicking Account then beck to home page when clicking Sessions', () => {
+    // Make sure we're on the sessions page first (login done in beforeEach)
+    cy.url().should('include', '/sessions');
+
+    // Click the "Account" link or button
+    cy.contains('Account').click();
+
+    // Assert that the URL is correct
+    cy.url().should('eq', 'http://localhost:4200/me');
+
+    // Optionally, assert something specific to the account page
+    cy.contains('User information').should('be.visible');
+
+    // Navigate away first to simulate being on another page
+    cy.contains('Account').click();
+    cy.url().should('eq', 'http://localhost:4200/me');
+
+    // Click the "Sessions" link in the navbar
+    cy.contains('Sessions').click();
+
+    // Assert that we're back on the sessions page
+    cy.url().should('eq', 'http://localhost:4200/sessions');
+
+    // Optionally check if the session list is visible
+    cy.contains('Rentals available').should('be.visible');
+  });
+
+  it('should log out and redirect to page with login and register links', () => {
+    // Ensure we're logged in and on the sessions page
+    cy.url().should('include', '/sessions');
+
+    // Click the "Logout" button in the navbar
+    cy.contains('Logout').click();
+
+    // Should redirect to homepage
+    cy.url().should('eq', 'http://localhost:4200/');
+
+    // Check that Login and Register buttons are visible
+    cy.contains('Login').should('be.visible');
+    cy.contains('Register').should('be.visible');
+  });
 
 
 
