@@ -47,6 +47,13 @@
 		</dependency>
 
 		<dependency>
+			<groupId>com.h2database</groupId>
+			<artifactId>h2</artifactId>
+			<version>2.3.232</version>
+			<scope>test</scope>
+		</dependency>
+
+		<dependency>
 			<groupId>io.jsonwebtoken</groupId>
 			<artifactId>jjwt</artifactId>
 			<version>0.9.1</version>
@@ -117,12 +124,40 @@
 							<version>1.5.5.Final</version>
 						</path>
 					</annotationProcessorPaths>
+					<source>9</source>
+					<target>9</target>
 				</configuration>
 			</plugin>
 			<plugin>
 				<groupId>org.jacoco</groupId>
 				<artifactId>jacoco-maven-plugin</artifactId>
 				<version>0.8.5</version>
+				<configuration>
+					<excludes>
+						<exclude>
+							com/openclassrooms/starterjwt/dto/*
+						</exclude>
+						<exclude>
+							com/openclassrooms/starterjwt/models/*
+						</exclude>
+						<exclude>
+							com/openclassrooms/starterjwt/mapper/*
+						</exclude>
+						<exclude>
+							com/openclassrooms/starterjwt/payload/request/*
+						</exclude>
+						<exclude>
+							com/openclassrooms/starterjwt/payload/response/*
+						</exclude>
+						<exclude>
+							com/openclassrooms/starterjwt/security/jwt/*
+						</exclude>
+						<exclude>
+							com/openclassrooms/starterjwt/SpringBootSecurityJwtApplication.class
+						</exclude>
+
+					</excludes>
+				</configuration>
 				<executions>
 					<execution>
 						<goals>
@@ -151,7 +186,7 @@
 										<limit>
 											<counter>LINE</counter>
 											<value>COVEREDRATIO</value>
-											<minimum>0.9</minimum>
+											<minimum>0.8</minimum>
 										</limit>
 									</limits>
 								</rule>

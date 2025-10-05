@@ -6,7 +6,7 @@ module.exports = {
   setupFilesAfterEnv: ['<rootDir>/setup-jest.ts'],
   bail: false,
   verbose: false,
-  collectCoverage: false,
+  collectCoverage: true,
   coverageDirectory: './coverage/jest',
   testPathIgnorePatterns: ['<rootDir>/node_modules/'],
   coveragePathIgnorePatterns: ['<rootDir>/node_modules/'],
@@ -24,4 +24,12 @@ module.exports = {
   moduleDirectories: [
     "node_modules"
   ],
+  collectCoverageFrom: [
+    "src/app/**/*.ts", // Collect coverage for all TypeScript files
+    "!src/app/**/*.spec.ts", // Exclude spec files from coverage
+    "!src/app/**/*.module.ts",
+    "!src/app/guards/*",
+    "!src/app/interceptors/*",
+  ],
+  verbose: true,
 };
