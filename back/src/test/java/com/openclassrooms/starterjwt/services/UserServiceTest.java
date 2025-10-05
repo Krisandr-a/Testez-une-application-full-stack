@@ -14,7 +14,7 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
 
-@ExtendWith(MockitoExtension.class)  // Use MockitoExtension to automatically initialize mocks
+@ExtendWith(MockitoExtension.class)
 class UserServiceTest {
 
     @Mock

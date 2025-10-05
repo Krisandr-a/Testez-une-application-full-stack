@@ -54,7 +54,7 @@ public class UserControllerIntegrationTest {
                 .username(testUser.getEmail())
                 .firstName(testUser.getFirstName())
                 .lastName(testUser.getLastName())
-                .admin(testUser.isAdmin())  // or getAdmin() if your getter is named that
+                .admin(testUser.isAdmin())
                 .password(testUser.getPassword())
                 .build();
 

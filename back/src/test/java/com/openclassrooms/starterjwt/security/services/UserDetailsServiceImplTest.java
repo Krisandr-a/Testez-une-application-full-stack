@@ -28,21 +28,6 @@ public class UserDetailsServiceImplTest {
     @InjectMocks
     private UserDetailsServiceImpl userDetailsService;
 
-//    @Test
-//    void loadUserByUsername_ReturnsUserDetails_WhenUserExists() {
-//        // Arrange
-//        String email = "test@example.com";
-//        User mockUser = new User();
-//        when(userRepository.findByEmail(email)).thenReturn(Optional.of(mockUser));
-//
-//        // Act
-//        UserDetails userDetails = userDetailsService.loadUserByUsername(email);
-//
-//        // Assert
-//        assertNotNull(userDetails);
-//        verify(userRepository).findByEmail(email);
-//    }
-
     @Test
     void loadUserByUsername_ReturnsUserDetails_WhenUserExists() {
         // Arrange

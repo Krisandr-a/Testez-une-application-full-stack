@@ -19,7 +19,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.*;
 
-@ExtendWith(MockitoExtension.class)  // Use MockitoExtension to handle mocks
+@ExtendWith(MockitoExtension.class)
 class SessionServiceTest {
 
     @Mock
